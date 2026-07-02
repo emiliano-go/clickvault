@@ -4,11 +4,14 @@ package clickvault
 
 import (
 	"context"
+	"crypto/tls"
 	"database/sql"
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	dbplugin "github.com/hashicorp/vault/sdk/database/dbplugin/v5"
@@ -19,10 +22,10 @@ import (
 const (
 	pluginType = "clickvault"
 
-	// DefaultUsernameTemplate produces usernames like
-	// v-token-myrole-a1b2c3d4-1719945600, truncated to fit ClickHouse's
-	// 255-character username limit.
-	DefaultUsernameTemplate = `{{ printf "v-%s-%s-%s-%s" (.DisplayName | truncate 64) (.RoleName | truncate 64) (random 8) (unix_time) | truncate 255 }}`
+	// DefaultUsernameTemplate produces usernames truncated to fit ClickHouse's
+	// 255-character username limit. The Vault role name is intentionally
+	// omitted to avoid leaking internal Vault structure in ClickHouse logs.
+	DefaultUsernameTemplate = `{{ printf "v-%s-%s-%s" (.DisplayName | truncate 8) (random 8) (unix_time) | truncate 255 }}`
 
 	// maxUsernameLength is ClickHouse's hard limit on identifier length.
 	maxUsernameLength = 255
@@ -39,6 +42,10 @@ type config struct {
 	Password         string `mapstructure:"password"`
 	Cluster          string `mapstructure:"cluster"`
 	UsernameTemplate string `mapstructure:"username_template"`
+	TLS              bool   `mapstructure:"tls"`
+	TLSSkipVerify    bool   `mapstructure:"tls_skip_verify"`
+	DialTimeout      int    `mapstructure:"dial_timeout_seconds"`
+	ReadTimeout      int    `mapstructure:"read_timeout_seconds"`
 }
 
 // ClickvaultPlugin implements dbplugin.Database for ClickHouse. All access to
@@ -134,14 +141,15 @@ func (p *ClickvaultPlugin) NewUser(ctx context.Context, req dbplugin.NewUserRequ
 	}
 
 	p.mu.RLock()
-	db := p.db
-	cluster := p.cfg.Cluster
-	up := p.usernameProducer
-	p.mu.RUnlock()
+	defer p.mu.RUnlock()
 
+	db := p.db
 	if db == nil {
 		return dbplugin.NewUserResponse{}, errors.New("clickvault NewUser: plugin not initialized")
 	}
+
+	cluster := p.cfg.Cluster
+	up := p.usernameProducer
 
 	username, err := up.Generate(req.UsernameConfig)
 	if err != nil {
@@ -171,22 +179,25 @@ func (p *ClickvaultPlugin) UpdateUser(ctx context.Context, req dbplugin.UpdateUs
 	}
 
 	p.mu.RLock()
-	db := p.db
-	cluster := p.cfg.Cluster
-	p.mu.RUnlock()
+	defer p.mu.RUnlock()
 
+	db := p.db
 	if db == nil {
 		return dbplugin.UpdateUserResponse{}, errors.New("clickvault UpdateUser: plugin not initialized")
 	}
 
+	cluster := p.cfg.Cluster
+
 	if req.Password != nil {
-		statements, err := rotateStatements(cluster, req.Password.Statements.Commands, req.Username, req.Password.NewPassword)
+		newPassword := req.Password.NewPassword
+		statements, err := rotateStatements(cluster, req.Password.Statements.Commands, req.Username, newPassword)
 		if err != nil {
 			return dbplugin.UpdateUserResponse{}, fmt.Errorf("clickvault UpdateUser: %w", err)
 		}
 
 		if err := execStatements(ctx, db, statements); err != nil {
-			return dbplugin.UpdateUserResponse{}, fmt.Errorf("clickvault UpdateUser: %w", err)
+			sanitized := strings.ReplaceAll(err.Error(), newPassword, "[password]")
+			return dbplugin.UpdateUserResponse{}, fmt.Errorf("clickvault UpdateUser: %s", sanitized)
 		}
 	}
 
@@ -198,13 +209,14 @@ func (p *ClickvaultPlugin) UpdateUser(ctx context.Context, req dbplugin.UpdateUs
 
 func (p *ClickvaultPlugin) DeleteUser(ctx context.Context, req dbplugin.DeleteUserRequest) (dbplugin.DeleteUserResponse, error) {
 	p.mu.RLock()
-	db := p.db
-	cluster := p.cfg.Cluster
-	p.mu.RUnlock()
+	defer p.mu.RUnlock()
 
+	db := p.db
 	if db == nil {
 		return dbplugin.DeleteUserResponse{}, errors.New("clickvault DeleteUser: plugin not initialized")
 	}
+
+	cluster := p.cfg.Cluster
 
 	statements, err := deleteStatements(cluster, req.Statements.Commands, req.Username)
 	if err != nil {
@@ -251,13 +263,33 @@ func openDB(cfg config) (*sql.DB, error) {
 		return nil, fmt.Errorf("invalid connection_url: %w", err)
 	}
 
-	db := clickhouse.OpenDB(&clickhouse.Options{
+	opts := &clickhouse.Options{
 		Addr: []string{addr},
 		Auth: clickhouse.Auth{
 			Username: cfg.Username,
 			Password: cfg.Password,
 		},
-	})
+	}
+
+	if cfg.TLS {
+		opts.TLS = &tls.Config{
+			InsecureSkipVerify: cfg.TLSSkipVerify,
+		}
+	}
+
+	dialTimeout := cfg.DialTimeout
+	if dialTimeout <= 0 {
+		dialTimeout = 5
+	}
+	opts.DialTimeout = time.Duration(dialTimeout) * time.Second
+
+	readTimeout := cfg.ReadTimeout
+	if readTimeout <= 0 {
+		readTimeout = 30
+	}
+	opts.ReadTimeout = time.Duration(readTimeout) * time.Second
+
+	db := clickhouse.OpenDB(opts)
 
 	db.SetMaxOpenConns(defaultMaxOpenConnections)
 	db.SetMaxIdleConns(defaultMaxOpenConnections)
@@ -268,12 +300,10 @@ func openDB(cfg config) (*sql.DB, error) {
 func parseAddr(connectionURL string) (string, error) {
 	u, err := url.Parse(connectionURL)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to parse connection_url %q: %w", connectionURL, err)
 	}
 	if u.Host == "" {
-		// No recognizable scheme (e.g. "host:9000" without "clickhouse://");
-		// treat the whole string as the address.
-		return connectionURL, nil
+		return "", fmt.Errorf("connection_url %q must include a scheme and host (e.g. clickhouse://host:9000)", connectionURL)
 	}
 
 	return u.Host, nil

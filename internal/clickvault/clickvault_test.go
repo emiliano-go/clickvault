@@ -127,8 +127,8 @@ func TestNewUser_NotInitialized(t *testing.T) {
 func TestNewUser_SingleNode(t *testing.T) {
 	p, mock := newTestPlugin(t, "")
 
-	mock.ExpectExec(`CREATE USER "v-token-testrole-.*" IDENTIFIED WITH sha256_password BY 'pw'`).WillReturnResult(sqlmock.NewResult(0, 0))
-	mock.ExpectExec(`GRANT analytics ON default\.\* TO "v-token-testrole-.*"`).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(`CREATE USER "v-token-[A-Za-z0-9]+-[0-9]+" IDENTIFIED WITH sha256_password BY 'pw'`).WillReturnResult(sqlmock.NewResult(0, 0))
+	mock.ExpectExec(`GRANT analytics ON default\.\* TO "v-token-[A-Za-z0-9]+-[0-9]+"`).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	resp, err := p.NewUser(t.Context(), dbplugin.NewUserRequest{
 		UsernameConfig: dbplugin.UsernameMetadata{DisplayName: "token", RoleName: "testrole"},
@@ -139,7 +139,7 @@ func TestNewUser_SingleNode(t *testing.T) {
 		Expiration: time.Now().Add(time.Hour),
 	})
 	require.NoError(t, err)
-	assert.Regexp(t, `^v-token-testrole-`, resp.Username)
+	assert.Regexp(t, `^v-token-`, resp.Username)
 	require.NoError(t, mock.ExpectationsWereMet())
 }
 
@@ -256,15 +256,20 @@ func TestParseAddr(t *testing.T) {
 	tests := map[string]struct {
 		connectionURL string
 		want          string
+		expectErr     bool
 	}{
-		"scheme prefixed": {connectionURL: "clickhouse://host:9000", want: "host:9000"},
-		"no scheme":       {connectionURL: "host:9000", want: "host:9000"},
-		"tcp scheme":      {connectionURL: "tcp://host:9440", want: "host:9440"},
+		"scheme prefixed":   {connectionURL: "clickhouse://host:9000", want: "host:9000"},
+		"no scheme is error": {connectionURL: "host:9000", expectErr: true},
+		"tcp scheme":        {connectionURL: "tcp://host:9440", want: "host:9440"},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			got, err := parseAddr(tt.connectionURL)
+			if tt.expectErr {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})

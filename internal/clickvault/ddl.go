@@ -106,9 +106,10 @@ func creationStatements(cluster string, rawStatements []string, username, passwo
 }
 
 // withCluster appends `ON CLUSTER '<cluster>'` to stmt unless cluster is
-// empty or stmt already contains an ON CLUSTER clause. Statements passed in
-// are already split on ";" by buildStatements, so no trailing punctuation is
-// added or removed here.
+// empty or stmt already contains an ON CLUSTER clause. Single quotes in the
+// cluster name are escaped to prevent SQL injection. Statements passed in are
+// already split on ";" by buildStatements, so no trailing punctuation is added
+// or removed here.
 func withCluster(stmt, cluster string) string {
 	if cluster == "" {
 		return stmt
@@ -117,5 +118,6 @@ func withCluster(stmt, cluster string) string {
 		return stmt
 	}
 
-	return fmt.Sprintf("%s ON CLUSTER '%s'", stmt, cluster)
+	safeCluster := strings.ReplaceAll(cluster, "'", "''")
+	return fmt.Sprintf("%s ON CLUSTER '%s'", stmt, safeCluster)
 }
