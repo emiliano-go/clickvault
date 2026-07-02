@@ -247,7 +247,3 @@ Role `creation_statements`, `rotation_statements` and `revocation_statements` st
 ## Concurrency and error handling
 
 `ClickvaultPlugin` holds its ClickHouse connection and config behind a single `sync.RWMutex`, so one plugin instance is safe for the concurrent calls Vault's plugin framework makes. Every error returned from the six interface methods is wrapped with `fmt.Errorf("clickvault <Method>: %w", err)` so failures are traceable back to which call produced them without needing to inspect logs from inside the plugin process.
-
-## CI
-
-`.github/workflows/ci.yml` runs on every push and pull request: `go vet ./...`, `go test ./...`, a linux/amd64 build, and uploads the binary plus its sha256 checksum as a build artifact. It resolves the Go toolchain from `go.mod` (`go-version-file: go.mod`) rather than a hardcoded version, since the pinned `hashicorp/vault/sdk` release requires a newer Go than older boilerplate defaults assume.
