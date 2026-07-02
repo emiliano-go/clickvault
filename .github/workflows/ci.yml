@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test ./...
+
+      - name: Build linux/amd64
+        run: make build-linux-amd64
+
+      - name: sha256 checksum
+        run: sha256sum bin/clickvault-linux-amd64 | tee bin/clickvault-linux-amd64.sha256
+
+      - name: Upload binary + checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: clickvault-linux-amd64
+          path: |
+            bin/clickvault-linux-amd64
+            bin/clickvault-linux-amd64.sha256
