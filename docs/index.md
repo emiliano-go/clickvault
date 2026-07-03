@@ -67,7 +67,7 @@ seo_html: "<title>ClickVault - ClickVault Documentation</title>\n<meta name=\"de
   \n  }\n}\n</script>\n"
 ---
 
-<div align="center">
+<div style="text-align: center">
   <img class="banner-light" src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png" alt="ClickVault" width="80%"/>
   <img class="banner-dark" src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner-dark.png" alt="ClickVault" width="80%"/>
 </div>
