@@ -25,7 +25,7 @@ Set with `vault write database/config/<name> plugin_name=clickvault ...`:
 
 | Field | Required | Description |
 |---|---|---|
-| `connection_url` | yes | ClickHouse address, e.g. `clickhouse://host:9000`. A bare `host:9000` also works. |
+| `connection_url` | yes | ClickHouse address, e.g. `clickhouse://host:9000`. A scheme is required — a bare `host:9000` is rejected, because `host` would be parsed as the scheme. |
 | `username` | yes | The Vault admin user in ClickHouse. Must have SQL driven access management enabled and the `ACCESS MANAGEMENT` grant, since it needs to create, alter and drop other users. |
 | `password` | yes | Password for `username`. |
 | `cluster` | no | If set, all DDL statements get `ON CLUSTER '<cluster>'` appended. Leave unset or empty for a single node deployment. |
@@ -57,11 +57,11 @@ GRANT analytics ON default.* TO "{{username}}";
 With a `cluster` configured on the connection, clickvault turns the same statements into:
 
 ```sql
-CREATE USER "{{username}}" IDENTIFIED WITH sha256_password BY '{{password}}' ON CLUSTER 'prod';
-GRANT analytics ON default.* TO "{{username}}" ON CLUSTER 'prod';
+CREATE USER "{{username}}" ON CLUSTER 'prod' IDENTIFIED WITH sha256_password BY '{{password}}';
+GRANT ON CLUSTER 'prod' analytics ON default.* TO "{{username}}";
 ```
 
-You write the single node version in your role config; clickvault appends the `ON CLUSTER` clause itself.
+You write the single node version in your role config; clickvault inserts the `ON CLUSTER` clause at the position ClickHouse's grammar requires (immediately after the entity name for `CREATE`/`ALTER`/`DROP USER`, and immediately after the verb for `GRANT`/`REVOKE`). If a statement already contains an explicit `ON CLUSTER`, it is left untouched.
 
 ### UpdateUser (`rotation_statements`, static roles only)
 
@@ -71,7 +71,7 @@ If a static role does not set `rotation_statements`, clickvault falls back to:
 ALTER USER "{{username}}" IDENTIFIED WITH sha256_password BY '{{password}}';
 ```
 
-(with `ON CLUSTER '<cluster>'` appended when applicable).
+(with `ON CLUSTER '<cluster>'` inserted after the user name when a cluster is configured).
 
 ### DeleteUser (`revocation_statements`)
 
@@ -113,6 +113,8 @@ rule "charset" {
 ```
 
 `scripts/setup_vault.sh` creates this policy as `clickhouse-password-policy` and wires it into the example roles.
+
+> **Security note.** ClickHouse DDL cannot be parameterized, so clickvault substitutes the generated username and password into the statement as literal text. It rejects any value containing a single quote, double quote, backtick, backslash or control character (which could otherwise break out of the surrounding SQL quoting and inject arbitrary DDL) — a user create/rotate will fail rather than run unsafe SQL. All other printable characters, including ordinary symbols, are allowed, so an alphanumeric-plus-symbols policy like the one above is both strong and safe.
 
 ## Repository layout
 

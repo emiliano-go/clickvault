@@ -9,24 +9,50 @@ import (
 
 func TestWithCluster(t *testing.T) {
 	tests := map[string]struct {
-		stmt    string
-		cluster string
-		want    string
+		stmt      string
+		cluster   string
+		want      string
+		expectErr bool
 	}{
 		"no cluster is a no-op": {
 			stmt:    `CREATE USER "bob" IDENTIFIED WITH sha256_password BY 'pw'`,
 			cluster: "",
 			want:    `CREATE USER "bob" IDENTIFIED WITH sha256_password BY 'pw'`,
 		},
-		"cluster appends ON CLUSTER before trailing semicolon": {
+		"CREATE USER inserts ON CLUSTER after the name, not at the end": {
 			stmt:    `CREATE USER "bob" IDENTIFIED WITH sha256_password BY 'pw'`,
 			cluster: "prod",
-			want:    `CREATE USER "bob" IDENTIFIED WITH sha256_password BY 'pw' ON CLUSTER 'prod'`,
+			want:    `CREATE USER "bob" ON CLUSTER 'prod' IDENTIFIED WITH sha256_password BY 'pw'`,
 		},
-		"cluster appends ON CLUSTER when statement has no trailing semicolon": {
+		"CREATE USER IF NOT EXISTS inserts after the name": {
+			stmt:    `CREATE USER IF NOT EXISTS "bob" IDENTIFIED WITH sha256_password BY 'pw'`,
+			cluster: "prod",
+			want:    `CREATE USER IF NOT EXISTS "bob" ON CLUSTER 'prod' IDENTIFIED WITH sha256_password BY 'pw'`,
+		},
+		"CREATE OR REPLACE USER inserts after the name": {
+			stmt:    `CREATE OR REPLACE USER "bob" IDENTIFIED WITH sha256_password BY 'pw'`,
+			cluster: "prod",
+			want:    `CREATE OR REPLACE USER "bob" ON CLUSTER 'prod' IDENTIFIED WITH sha256_password BY 'pw'`,
+		},
+		"ALTER USER inserts ON CLUSTER after the name": {
+			stmt:    `ALTER USER "bob" IDENTIFIED WITH sha256_password BY 'pw'`,
+			cluster: "prod",
+			want:    `ALTER USER "bob" ON CLUSTER 'prod' IDENTIFIED WITH sha256_password BY 'pw'`,
+		},
+		"DROP USER inserts ON CLUSTER after the trailing name": {
 			stmt:    `DROP USER IF EXISTS "bob"`,
 			cluster: "prod",
 			want:    `DROP USER IF EXISTS "bob" ON CLUSTER 'prod'`,
+		},
+		"GRANT inserts ON CLUSTER immediately after the verb": {
+			stmt:    `GRANT analytics ON default.* TO "bob"`,
+			cluster: "prod",
+			want:    `GRANT ON CLUSTER 'prod' analytics ON default.* TO "bob"`,
+		},
+		"REVOKE inserts ON CLUSTER immediately after the verb": {
+			stmt:    `REVOKE analytics ON default.* FROM "bob"`,
+			cluster: "prod",
+			want:    `REVOKE ON CLUSTER 'prod' analytics ON default.* FROM "bob"`,
 		},
 		"existing ON CLUSTER clause is left untouched": {
 			stmt:    `GRANT analytics ON default.* TO "bob" ON CLUSTER 'prod'`,
@@ -38,11 +64,61 @@ func TestWithCluster(t *testing.T) {
 			cluster: "prod",
 			want:    `GRANT analytics ON default.* TO "bob" on cluster 'prod'`,
 		},
+		"a bare ON (grant target) is not mistaken for ON CLUSTER": {
+			stmt:    `GRANT SELECT ON default.* TO "bob"`,
+			cluster: "prod",
+			want:    `GRANT ON CLUSTER 'prod' SELECT ON default.* TO "bob"`,
+		},
+		"quotes in the cluster name are doubled": {
+			stmt:    `DROP USER IF EXISTS "bob"`,
+			cluster: "pr'od",
+			want:    `DROP USER IF EXISTS "bob" ON CLUSTER 'pr''od'`,
+		},
+		"unrecognized statement errors instead of emitting broken SQL": {
+			stmt:      `SELECT 1`,
+			cluster:   "prod",
+			expectErr: true,
+		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tt.want, withCluster(tt.stmt, tt.cluster))
+			got, err := withCluster(tt.stmt, tt.cluster)
+			if tt.expectErr {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestValidateSubstitution(t *testing.T) {
+	valid := []string{
+		"simplepassword",
+		"Str0ng-P@ssw0rd_1234",
+		"v-token-role-abcd1234",
+		"has spaces and symbols !#$%^&*()",
+	}
+	for _, v := range valid {
+		require.NoError(t, validateSubstitution("password", v), "expected %q to be valid", v)
+	}
+
+	invalid := map[string]string{
+		"single quote breaks the literal": "pw' OR '1'='1",
+		"double quote breaks identifier":  `bo"b`,
+		"backslash":                       `pw\x`,
+		"backtick":                        "pw`x",
+		"newline":                         "pw\nDROP USER x",
+		"null byte":                       "pw\x00",
+	}
+	for name, v := range invalid {
+		t.Run(name, func(t *testing.T) {
+			err := validateSubstitution("password", v)
+			require.Error(t, err)
+			// The offending value must never appear in the error.
+			assert.NotContains(t, err.Error(), v)
 		})
 	}
 }
@@ -72,7 +148,7 @@ func TestCreationStatements(t *testing.T) {
 				`GRANT analytics ON default.* TO "v-token-role-abcd1234"`,
 			},
 		},
-		"cluster create + grant appends ON CLUSTER to each statement": {
+		"cluster create + grant inserts ON CLUSTER at each grammatical position": {
 			cluster: "prod",
 			rawStatements: []string{
 				`CREATE USER "{{username}}" IDENTIFIED WITH sha256_password BY '{{password}}'; GRANT analytics ON default.* TO "{{username}}"`,
@@ -80,8 +156,8 @@ func TestCreationStatements(t *testing.T) {
 			username: "v-token-role-abcd1234",
 			password: "sekret",
 			want: []string{
-				`CREATE USER "v-token-role-abcd1234" IDENTIFIED WITH sha256_password BY 'sekret' ON CLUSTER 'prod'`,
-				`GRANT analytics ON default.* TO "v-token-role-abcd1234" ON CLUSTER 'prod'`,
+				`CREATE USER "v-token-role-abcd1234" ON CLUSTER 'prod' IDENTIFIED WITH sha256_password BY 'sekret'`,
+				`GRANT ON CLUSTER 'prod' analytics ON default.* TO "v-token-role-abcd1234"`,
 			},
 		},
 		"blank statements and stray semicolons are skipped": {
@@ -99,6 +175,18 @@ func TestCreationStatements(t *testing.T) {
 			username:      "bob",
 			password:      "pw",
 			want:          []string{`CREATE USER "bob" IDENTIFIED WITH sha256_password BY 'pw'`},
+		},
+		"injection-unsafe password is rejected": {
+			rawStatements: []string{`CREATE USER "{{username}}" IDENTIFIED WITH sha256_password BY '{{password}}'`},
+			username:      "bob",
+			password:      "pw'; DROP USER \"bob\"; --",
+			expectErr:     true,
+		},
+		"injection-unsafe username is rejected": {
+			rawStatements: []string{`CREATE USER "{{username}}" IDENTIFIED WITH sha256_password BY '{{password}}'`},
+			username:      `bo"b`,
+			password:      "pw",
+			expectErr:     true,
 		},
 	}
 
@@ -122,6 +210,7 @@ func TestRotateStatements(t *testing.T) {
 		username      string
 		newPassword   string
 		want          []string
+		expectErr     bool
 	}{
 		"default statement, single-node": {
 			username:    "bob",
@@ -130,12 +219,12 @@ func TestRotateStatements(t *testing.T) {
 				`ALTER USER "bob" IDENTIFIED WITH sha256_password BY 'newpw'`,
 			},
 		},
-		"default statement, cluster": {
+		"default statement, cluster inserts ON CLUSTER after the name": {
 			cluster:     "prod",
 			username:    "bob",
 			newPassword: "newpw",
 			want: []string{
-				`ALTER USER "bob" IDENTIFIED WITH sha256_password BY 'newpw' ON CLUSTER 'prod'`,
+				`ALTER USER "bob" ON CLUSTER 'prod' IDENTIFIED WITH sha256_password BY 'newpw'`,
 			},
 		},
 		"custom rotation statement overrides default": {
@@ -146,11 +235,20 @@ func TestRotateStatements(t *testing.T) {
 				`ALTER USER "bob" IDENTIFIED WITH sha256_password BY 'newpw'`,
 			},
 		},
+		"injection-unsafe new password is rejected": {
+			username:    "bob",
+			newPassword: "np' OR '1'='1",
+			expectErr:   true,
+		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			got, err := rotateStatements(tt.cluster, tt.rawStatements, tt.username, tt.newPassword)
+			if tt.expectErr {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})
@@ -163,6 +261,7 @@ func TestDeleteStatements(t *testing.T) {
 		rawStatements []string
 		username      string
 		want          []string
+		expectErr     bool
 	}{
 		"default statement, single-node": {
 			username: "bob",
@@ -184,11 +283,19 @@ func TestDeleteStatements(t *testing.T) {
 				`DROP USER IF EXISTS "bob"`,
 			},
 		},
+		"injection-unsafe username is rejected": {
+			username:  `bo"b; DROP USER "root"`,
+			expectErr: true,
+		},
 	}
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			got, err := deleteStatements(tt.cluster, tt.rawStatements, tt.username)
+			if tt.expectErr {
+				require.Error(t, err)
+				return
+			}
 			require.NoError(t, err)
 			assert.Equal(t, tt.want, got)
 		})

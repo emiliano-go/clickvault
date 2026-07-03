@@ -167,7 +167,26 @@ func (p *ClickvaultPlugin) NewUser(ctx context.Context, req dbplugin.NewUserRequ
 	}
 
 	if err := execStatements(ctx, db, statements); err != nil {
-		return dbplugin.NewUserResponse{}, fmt.Errorf("clickvault NewUser: %w", err)
+		// A multi-statement creation_statements batch (e.g. "CREATE USER ...;
+		// GRANT ...;") is not transactional in ClickHouse: if a later
+		// statement fails, the user from an earlier CREATE USER may already
+		// exist. Since this call is about to return an error, Vault will
+		// never record a lease for it, so that user would otherwise be
+		// orphaned - live in ClickHouse but untracked and never expired.
+		// Best-effort clean it up before returning; DROP USER IF EXISTS is a
+		// no-op if CREATE USER itself was what failed.
+		sanitized := strings.ReplaceAll(err.Error(), req.Password, "[password]")
+
+		if cleanupStatements, cerr := deleteStatements(cluster, nil, username); cerr == nil {
+			if cleanupErr := execStatements(ctx, db, cleanupStatements); cleanupErr != nil {
+				return dbplugin.NewUserResponse{}, fmt.Errorf(
+					"clickvault NewUser: %s (also failed to clean up partially created user %q: %v)",
+					sanitized, username, cleanupErr,
+				)
+			}
+		}
+
+		return dbplugin.NewUserResponse{}, fmt.Errorf("clickvault NewUser: %s", sanitized)
 	}
 
 	return dbplugin.NewUserResponse{Username: username}, nil
@@ -254,9 +273,10 @@ func execStatements(ctx context.Context, db *sql.DB, statements []string) error 
 	return nil
 }
 
-// openDB builds a *sql.DB for cfg without connecting. connection_url is
-// expected in host:port form, optionally prefixed with a clickhouse:// (or
-// any other) scheme, e.g. "clickhouse://host:9000" or "host:9000".
+// openDB builds a *sql.DB for cfg without connecting. connection_url must
+// include a scheme so the host:port can be parsed unambiguously, e.g.
+// "clickhouse://host:9000". A bare "host:9000" (no scheme) is rejected by
+// parseAddr, since url.Parse would treat "host" as the scheme.
 func openDB(cfg config) (*sql.DB, error) {
 	addr, err := parseAddr(cfg.ConnectionURL)
 	if err != nil {
@@ -311,13 +331,22 @@ func parseAddr(connectionURL string) (string, error) {
 
 // verifyConnection pings the database and confirms that username holds the
 // ACCESS MANAGEMENT privilege, since NewUser/UpdateUser/DeleteUser all
-// require it to create, alter and drop other ClickHouse users.
+// require it to create, alter and drop other ClickHouse users. The privilege
+// is checked both as a direct grant to the user and as a grant inherited
+// through any role assigned to the user (ClickHouse's own docs recommend
+// managing admin privileges via a role rather than granting directly to a
+// user, so a direct-only check would reject a correctly configured admin).
 func verifyConnection(ctx context.Context, db *sql.DB, username string) error {
 	if err := db.PingContext(ctx); err != nil {
 		return fmt.Errorf("error verifying connection: %w", err)
 	}
 
-	rows, err := db.QueryContext(ctx, "SELECT access_type FROM system.grants WHERE user_name = ?", username)
+	rows, err := db.QueryContext(ctx, `
+		SELECT access_type FROM system.grants WHERE user_name = ?
+		UNION ALL
+		SELECT g.access_type FROM system.grants g
+		WHERE g.role_name IN (SELECT granted_role_name FROM system.role_grants WHERE user_name = ?)
+	`, username, username)
 	if err != nil {
 		return fmt.Errorf("unable to verify access_management grant: %w", err)
 	}
