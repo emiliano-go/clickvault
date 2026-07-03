@@ -1,6 +1,7 @@
-<p align="center">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="clickvault-banner-dark.png">
   <img src="clickvault-banner.png" alt="ClickVault">
-</p>
+</picture>
 
 # clickvault
 
