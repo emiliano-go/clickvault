@@ -97,10 +97,10 @@ Integration tests spin up a real ClickHouse container (matching
 `testdata/docker-compose.yml`) with the Vault SDK's Docker test helper,
 and drive the full lifecycle:
 
-1. `Initialize` — configure the connection
-2. `NewUser` — create a dynamic user
+1. `Initialize` - configure the connection
+2. `NewUser` - create a dynamic user
 3. Verify the user can connect to ClickHouse
-4. `DeleteUser` — revoke the user
+4. `DeleteUser` - revoke the user
 5. Verify the user can no longer connect
 6. Repeat `DeleteUser` to confirm idempotency
 7. `UpdateUser` on a static-style user with before/after connection checks

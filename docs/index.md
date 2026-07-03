@@ -104,11 +104,11 @@ statement gets `ON CLUSTER '<cluster>'` appended automatically.
 
 ## Key features
 
-- **Dynamic credentials** — ephemeral ClickHouse users created on demand, automatically cleaned up
-- **Static role rotation** — scheduled password rotation for existing long-lived users
-- **Cluster-aware DDL** — automatic `ON CLUSTER` insertion for multi-node ClickHouse
-- **SQL injection prevention** — rejects values containing quotes, backticks, or control characters
-- **Concurrency-safe** — single `sync.RWMutex` protects the connection and config
+- **Dynamic credentials** - ephemeral ClickHouse users created on demand, automatically cleaned up
+- **Static role rotation** - scheduled password rotation for existing long-lived users
+- **Cluster-aware DDL** - automatic `ON CLUSTER` insertion for multi-node ClickHouse
+- **SQL injection prevention** - rejects values containing quotes, backticks, or control characters
+- **Concurrency-safe** - single `sync.RWMutex` protects the connection and config
 
 ## Repository
 

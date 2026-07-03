@@ -146,5 +146,5 @@ one is templated and executed independently.
 ClickHouse DDL cannot be parameterized, so ClickVault substitutes the
 generated username and password into the statement as literal text. It
 rejects any value containing a single quote, double quote, backtick,
-backslash or control character — a user create/rotate will fail rather than
+backslash or control character; a user create/rotate will fail rather than
 run unsafe SQL.

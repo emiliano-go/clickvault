@@ -100,7 +100,7 @@ type `clickvault` and communicates over the plugin RPC boundary.
 ## DDL construction
 
 All SQL is built in one place, `internal/clickvault/ddl.go`. The rest of the
-plugin never constructs SQL strings itself — it only calls into `ddl.go` and
+plugin never constructs SQL strings itself; it only calls into `ddl.go` and
 executes whatever statements come back.
 
 Key design decisions:
