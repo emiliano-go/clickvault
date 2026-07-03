@@ -6,9 +6,8 @@ seo:
   og:
     type: website
     title: ClickVault - ClickVault Documentation
-    description: ClickVault is a HashiCorp Vault database secrets engine plugin for
-      ClickHouse. It lets Vault create short-lived, ephemeral ClickHouse users on
-      demand dynamic...
+    description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png"
+      alt="ClickVault" width="80%"/ </p <p...
     url: https://clickvault.emiliano-go.com/
     image: https://clickvault.emiliano-go.com/assets/images/og-image.png
     image:width: 1376
@@ -19,65 +18,86 @@ seo:
   twitter:
     card: summary_large_image
     title: ClickVault - ClickVault Documentation
-    description: ClickVault is a HashiCorp Vault database secrets engine plugin for
-      ClickHouse. It lets Vault create short-lived, ephemeral ClickHouse users on
-      demand dynamic...
+    description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png"
+      alt="ClickVault" width="80%"/ </p <p...
     image: https://clickvault.emiliano-go.com/assets/images/og-image.png
     image:alt: ClickVault documentation
     site: '@emiliano_go_'
-  description: ClickVault is a HashiCorp Vault database secrets engine plugin for
-    ClickHouse. It lets Vault create short-lived, ephemeral ClickHouse users on demand
-    dynamic...
+  description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png"
+    alt="ClickVault" width="80%"/ </p <p...
   schema_jsonld:
     '@context': https://schema.org
     '@type': WebPage
     name: ClickVault - ClickVault Documentation
     url: https://clickvault.emiliano-go.com/
-    description: ClickVault is a HashiCorp Vault database secrets engine plugin for
-      ClickHouse. It lets Vault create short-lived, ephemeral ClickHouse users on
-      demand dynamic...
+    description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png"
+      alt="ClickVault" width="80%"/ </p <p...
     image: https://clickvault.emiliano-go.com/assets/images/og-image.png
     publisher:
       '@type': Organization
       name: Emiliano Gandini Outeda
       logo: https://clickvault.emiliano-go.com/assets/images/og-image.png
 seo_html: "<title>ClickVault - ClickVault Documentation</title>\n<meta name=\"description\"\
-  \ content=\"ClickVault is a HashiCorp Vault database secrets engine plugin for ClickHouse.\
-  \ It lets Vault create short-lived, ephemeral ClickHouse users on demand dynamic...\"\
-  >\n<link rel=\"canonical\" href=\"https://clickvault.emiliano-go.com/\">\n<meta\
-  \ name=\"robots\" content=\"index,follow\">\n<meta property=\"og:type\" content=\"\
-  website\">\n<meta property=\"og:title\" content=\"ClickVault - ClickVault Documentation\"\
-  >\n<meta property=\"og:description\" content=\"ClickVault is a HashiCorp Vault database\
-  \ secrets engine plugin for ClickHouse. It lets Vault create short-lived, ephemeral\
-  \ ClickHouse users on demand dynamic...\">\n<meta property=\"og:url\" content=\"\
-  https://clickvault.emiliano-go.com/\">\n<meta property=\"og:image\" content=\"https://clickvault.emiliano-go.com/assets/images/og-image.png\"\
-  >\n<meta property=\"og:image:width\" content=\"1376\">\n<meta property=\"og:image:height\"\
+  \ content=\"&lt;p align=&quot;center&quot; &lt;img src=&quot;https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png&quot;\
+  \ alt=&quot;ClickVault&quot; width=&quot;80%&quot;/ &lt;/p &lt;p...\">\n<link rel=\"\
+  canonical\" href=\"https://clickvault.emiliano-go.com/\">\n<meta name=\"robots\"\
+  \ content=\"index,follow\">\n<meta property=\"og:type\" content=\"website\">\n<meta\
+  \ property=\"og:title\" content=\"ClickVault - ClickVault Documentation\">\n<meta\
+  \ property=\"og:description\" content=\"&lt;p align=&quot;center&quot; &lt;img src=&quot;https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png&quot;\
+  \ alt=&quot;ClickVault&quot; width=&quot;80%&quot;/ &lt;/p &lt;p...\">\n<meta property=\"\
+  og:url\" content=\"https://clickvault.emiliano-go.com/\">\n<meta property=\"og:image\"\
+  \ content=\"https://clickvault.emiliano-go.com/assets/images/og-image.png\">\n<meta\
+  \ property=\"og:image:width\" content=\"1376\">\n<meta property=\"og:image:height\"\
   \ content=\"768\">\n<meta property=\"og:image:alt\" content=\"ClickVault documentation\"\
   >\n<meta property=\"og:site_name\" content=\"ClickVault Documentation\">\n<meta\
   \ property=\"og:locale\" content=\"en_US\">\n<meta name=\"twitter:card\" content=\"\
   summary_large_image\">\n<meta name=\"twitter:title\" content=\"ClickVault - ClickVault\
-  \ Documentation\">\n<meta name=\"twitter:description\" content=\"ClickVault is a\
-  \ HashiCorp Vault database secrets engine plugin for ClickHouse. It lets Vault create\
-  \ short-lived, ephemeral ClickHouse users on demand dynamic...\">\n<meta name=\"\
+  \ Documentation\">\n<meta name=\"twitter:description\" content=\"&lt;p align=&quot;center&quot;\
+  \ &lt;img src=&quot;https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png&quot;\
+  \ alt=&quot;ClickVault&quot; width=&quot;80%&quot;/ &lt;/p &lt;p...\">\n<meta name=\"\
   twitter:image\" content=\"https://clickvault.emiliano-go.com/assets/images/og-image.png\"\
   >\n<meta name=\"twitter:image:alt\" content=\"ClickVault documentation\">\n<meta\
   \ name=\"twitter:site\" content=\"@emiliano_go_\">\n<script type=\"application/ld+json\"\
   >\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"WebPage\",\n  \"name\"\
   : \"ClickVault - ClickVault Documentation\",\n  \"url\": \"https://clickvault.emiliano-go.com/\"\
-  ,\n  \"description\": \"ClickVault is a HashiCorp Vault database secrets engine\
-  \ plugin for ClickHouse. It lets Vault create short-lived, ephemeral ClickHouse\
-  \ users on demand dynamic...\",\n  \"image\": \"https://clickvault.emiliano-go.com/assets/images/og-image.png\"\
+  ,\n  \"description\": \"<p align=\\\"center\\\" <img src=\\\"https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png\\\
+  \" alt=\\\"ClickVault\\\" width=\\\"80%\\\"/ </p <p...\",\n  \"image\": \"https://clickvault.emiliano-go.com/assets/images/og-image.png\"\
   ,\n  \"publisher\": {\n    \"@type\": \"Organization\",\n    \"name\": \"Emiliano\
   \ Gandini Outeda\",\n    \"logo\": \"https://clickvault.emiliano-go.com/assets/images/og-image.png\"\
   \n  }\n}\n</script>\n"
 ---
 
-# ClickVault
+<p align="center">
+  <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png" alt="ClickVault" width="80%"/>
+</p>
+<p align="center">
+  <strong style="font-size: 2.5em;">ClickVault</strong>
+</p>
+<p align="center">
+  <em>A HashiCorp Vault database secrets engine plugin for ClickHouse.</em>
+</p>
+<p align="center">
+  <a href="https://go.dev/doc/devel/release">
+    <img src="https://img.shields.io/badge/Go-1.26%2B-00ADD8?logo=go&logoColor=white&style=for-the-badge" alt="Go">
+  </a>
+  <a href="https://github.com/emiliano-go/clickvault/releases">
+    <img src="https://img.shields.io/github/v/release/emiliano-go/clickvault?logo=github&style=for-the-badge" alt="GitHub Release">
+  </a>
+  <a href="https://github.com/emiliano-go/clickvault/blob/master/LICENSE">
+    <img src="https://img.shields.io/badge/License-MIT-10AC84?style=for-the-badge" alt="License">
+  </a>
+</p>
 
-ClickVault is a **HashiCorp Vault database secrets engine plugin for ClickHouse**.
-It lets Vault create short-lived, ephemeral ClickHouse users on demand (**dynamic
-secrets**) and rotate the password of long-lived ClickHouse users on a schedule
-(**static roles**), so applications and operators never handle a standing
+<p align="center">
+  <strong><a href="https://clickvault.emiliano-go.com/">Full documentation</a></strong>
+  &nbsp;|&nbsp;
+  <strong><a href="https://github.com/emiliano-go/clickvault">Source Code</a></strong>
+</p>
+
+ClickVault is a HashiCorp Vault database secrets engine plugin for ClickHouse.
+It lets Vault create short-lived, ephemeral ClickHouse users on demand (dynamic
+secrets) and rotate the password of long-lived ClickHouse users on a schedule
+(static roles), so applications and operators never handle a standing
 ClickHouse credential directly.
 
 It implements the Vault database plugin SDK interface (`sdk/database/dbplugin/v5`)
@@ -111,17 +131,9 @@ position automatically.
 - **SQL injection prevention** - rejects values containing quotes, backticks, or control characters
 - **Concurrency-safe** - single `sync.RWMutex` protects the connection and config
 
-## Repository
+## Next steps
 
-```text
-clickvault/
-├── main.go                    plugin entrypoint
-├── internal/clickvault/
-│   ├── clickvault.go           six dbplugin.Database methods
-│   ├── clickvault_test.go      unit tests (go-sqlmock)
-│   ├── ddl.go                  SQL construction and cluster branching
-│   └── ddl_test.go             table-driven tests
-├── testdata/docker-compose.yml single-node ClickHouse for manual testing
-├── tests/integration_test.go   integration tests against real ClickHouse
-└── scripts/setup_vault.sh      registers and configures the plugin
-```
+- Follow the [Quick Start](quick-start.md) to register the plugin and create your first role
+- Learn about [Configuration](configuration.md) options
+- Understand [Roles](roles.md) for dynamic and static credentials
+- Explore the [Architecture](architecture.md) for implementation details

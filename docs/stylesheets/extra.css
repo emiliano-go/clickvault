@@ -1,0 +1,13 @@
+:root {
+    --md-primary-fg-color: #cd4bfb;
+}
+
+/* Zensical renders a synthetic homepage H1 for root index.md. */
+.md-content__inner > h1#__skip {
+    display: none;
+}
+
+/* Prevent wrapping in the first-column code cells of dependency tables. */
+.md-typeset table td:first-child code {
+    white-space: nowrap;
+}
