@@ -11,3 +11,8 @@
 .md-typeset table td:first-child code {
     white-space: nowrap;
 }
+
+/* Theme-aware banner: light mode shows .banner-light, dark mode shows .banner-dark.
+   Material sets data-md-color-scheme on <body> when the user toggles the palette. */
+[data-md-color-scheme="default"] .banner-dark { display: none; }
+[data-md-color-scheme="slate"] .banner-light { display: none; }
