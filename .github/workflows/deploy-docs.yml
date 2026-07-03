@@ -24,17 +24,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      - run: pip install "seoslug>=2.0.1" zensical
+      - run: pip install zensical seoslug
       - run: python scripts/generate_seo.py
       - run: python scripts/generate_llms_full.py
       - run: zensical build --clean
-      - run: cp docs/CNAME site/CNAME
-      - run: cp docs/.nojekyll site/.nojekyll
       - run: cp docs/robots.txt site/robots.txt
       - run: cp docs/llms.txt site/llms.txt
       - run: cp docs/llms-full.txt site/llms-full.txt
