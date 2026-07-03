@@ -13,6 +13,13 @@ import (
 // creation_statements configured on the Vault role.
 var ErrEmptyCreationStatement = dbutil.ErrEmptyCreationStatement
 
+// ErrUnclusterableStatement is returned by withCluster when the statement
+// starts with a keyword the tokenizer does not recognize. Callers (NewUser,
+// UpdateUser, DeleteUser) fail the operation rather than silently running
+// unclustered SQL, forcing the operator to either extend the tokenizer or
+// add an explicit ON CLUSTER clause to the statement.
+var ErrUnclusterableStatement = errors.New("clickvault: statement type not recognized by cluster tokenizer")
+
 const (
 	defaultRotateStatement = `ALTER USER "{{username}}" IDENTIFIED WITH sha256_password BY '{{password}}';`
 	defaultDeleteStatement = `DROP USER IF EXISTS "{{username}}";`
@@ -177,6 +184,25 @@ func creationStatements(cluster string, rawStatements []string, username, passwo
 // there is no trailing semicolon to work around. For any statement whose shape
 // clickvault cannot confidently place the clause in, an error is returned rather
 // than emitting broken SQL, so the operator can add ON CLUSTER explicitly.
+// leadingKeyword extracts the first 1-2 whitespace-separated words from stmt
+// for use in error messages when the tokenizer cannot place an ON CLUSTER
+// clause. It uses the same tokenizer withCluster uses, so the extracted keyword
+// is always the same one the switch statement sees. For CREATE/ALTER/DROP it
+// includes the second token (the entity keyword) so the error says "CREATE
+// ROLE" not just "CREATE".
+func leadingKeyword(stmt string) string {
+	tokens := tokenizeLeading(stmt)
+	if len(tokens) == 0 {
+		return ""
+	}
+	keyword := tokens[0].text
+	upper := strings.ToUpper(keyword)
+	if (upper == "CREATE" || upper == "ALTER" || upper == "DROP") && len(tokens) >= 2 {
+		keyword += " " + tokens[1].text
+	}
+	return keyword
+}
+
 func withCluster(stmt, cluster string) (string, error) {
 	if cluster == "" {
 		return stmt, nil
@@ -204,9 +230,8 @@ func withCluster(stmt, cluster string) (string, error) {
 		}
 		return spliceAfter(stmt, nameEnd, clause), nil
 	default:
-		return "", fmt.Errorf(
-			"cannot inject ON CLUSTER into %q: unrecognized statement; add an explicit ON CLUSTER clause",
-			stmt,
+		return stmt, fmt.Errorf(
+			"%w: %q", ErrUnclusterableStatement, leadingKeyword(stmt),
 		)
 	}
 }

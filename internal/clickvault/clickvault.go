@@ -35,6 +35,24 @@ const (
 
 var _ dbplugin.Database = (*ClickvaultPlugin)(nil)
 
+// userExists reports whether a ClickHouse user with the given name already
+// exists. Used as a pre-emptive collision guard in NewUser, since the default
+// username_template truncates DisplayName to 8 characters.
+//
+// The caller must already hold at least p.mu.RLock; userExists does not
+// acquire the lock itself so it can be safely called from NewUser's existing
+// locked region.
+func (p *ClickvaultPlugin) userExists(ctx context.Context, username string) (bool, error) {
+	var exists bool
+	err := p.db.QueryRowContext(ctx,
+		"SELECT count() > 0 FROM system.users WHERE name = ?", username,
+	).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("checking username collision: %w", err)
+	}
+	return exists, nil
+}
+
 // config holds the connection settings parsed from InitializeRequest.Config.
 type config struct {
 	ConnectionURL    string `mapstructure:"connection_url"`
@@ -157,6 +175,19 @@ func (p *ClickvaultPlugin) NewUser(ctx context.Context, req dbplugin.NewUserRequ
 	}
 	if len(username) > maxUsernameLength {
 		username = username[:maxUsernameLength]
+	}
+
+	exists, err := p.userExists(ctx, username)
+	if err != nil {
+		return dbplugin.NewUserResponse{}, fmt.Errorf("clickvault NewUser: %w", err)
+	}
+	if exists {
+		return dbplugin.NewUserResponse{}, fmt.Errorf(
+			"clickvault NewUser: generated username %q already exists "+
+				"(possible collision from truncated display name in username_template); "+
+				"consider a longer username_template or reducing lease volume for this display name",
+			username,
+		)
 	}
 
 	expiration := req.Expiration.Format("2006-01-02 15:04:05-0700")

@@ -128,6 +128,9 @@ func TestNewUser_NotInitialized(t *testing.T) {
 func TestNewUser_SingleNode(t *testing.T) {
 	p, mock := newTestPlugin(t, "")
 
+	mock.ExpectQuery(`SELECT count\(\) > 0 FROM system\.users WHERE name = \?`).
+		WithArgs(sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"count() > 0"}).AddRow(false))
 	mock.ExpectExec(`CREATE USER "v-token-[A-Za-z0-9]+-[0-9]+" IDENTIFIED WITH sha256_password BY 'pw'`).WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(`GRANT analytics ON default\.\* TO "v-token-[A-Za-z0-9]+-[0-9]+"`).WillReturnResult(sqlmock.NewResult(0, 0))
 
@@ -147,6 +150,9 @@ func TestNewUser_SingleNode(t *testing.T) {
 func TestNewUser_ClusterAppendsOnCluster(t *testing.T) {
 	p, mock := newTestPlugin(t, "prod")
 
+	mock.ExpectQuery(`SELECT count\(\) > 0 FROM system\.users WHERE name = \?`).
+		WithArgs(sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"count() > 0"}).AddRow(false))
 	mock.ExpectExec(`CREATE USER "bob" ON CLUSTER 'prod' IDENTIFIED WITH sha256_password BY 'pw'`).WillReturnResult(sqlmock.NewResult(0, 0))
 
 	_, err := p.NewUser(t.Context(), dbplugin.NewUserRequest{
@@ -173,6 +179,9 @@ func TestNewUser_SanitizesPasswordAndCleansUpOnPartialFailure(t *testing.T) {
 
 	const usernamePattern = `v-token-[A-Za-z0-9]+-[0-9]+`
 
+	mock.ExpectQuery(`SELECT count\(\) > 0 FROM system\.users WHERE name = \?`).
+		WithArgs(sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"count() > 0"}).AddRow(false))
 	mock.ExpectExec(`CREATE USER "` + usernamePattern + `" IDENTIFIED WITH sha256_password BY 'sekret-pw'`).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(`GRANT analytics ON default\.\* TO "` + usernamePattern + `"`).
@@ -206,6 +215,9 @@ func TestNewUser_ReportsCleanupFailureAlongsideOriginalError(t *testing.T) {
 
 	const usernamePattern = `v-token-[A-Za-z0-9]+-[0-9]+`
 
+	mock.ExpectQuery(`SELECT count\(\) > 0 FROM system\.users WHERE name = \?`).
+		WithArgs(sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"count() > 0"}).AddRow(false))
 	mock.ExpectExec(`CREATE USER "` + usernamePattern + `" IDENTIFIED WITH sha256_password BY 'pw'`).
 		WillReturnResult(sqlmock.NewResult(0, 0))
 	mock.ExpectExec(`GRANT analytics ON default\.\* TO "` + usernamePattern + `"`).
@@ -256,6 +268,50 @@ func TestUpdateUser_PasswordRotation(t *testing.T) {
 		Username: "bob",
 		Password: &dbplugin.ChangePassword{NewPassword: "newpw"},
 	})
+	require.NoError(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestNewUser_UsernameCollision(t *testing.T) {
+	p, mock := newTestPlugin(t, "")
+
+	mock.ExpectQuery(`SELECT count\(\) > 0 FROM system\.users WHERE name = \?`).
+		WithArgs(sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"count() > 0"}).AddRow(true))
+
+	_, err := p.NewUser(t.Context(), dbplugin.NewUserRequest{
+		UsernameConfig: dbplugin.UsernameMetadata{DisplayName: "token", RoleName: "testrole"},
+		Statements: dbplugin.Statements{
+			Commands: []string{`CREATE USER "{{username}}" IDENTIFIED WITH sha256_password BY '{{password}}';`},
+		},
+		Password:   "pw",
+		Expiration: time.Now().Add(time.Hour),
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "already exists")
+	assert.Contains(t, err.Error(), "username_template")
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestNewUser_NoCollision_ProceedsNormally(t *testing.T) {
+	p, mock := newTestPlugin(t, "")
+
+	mock.ExpectQuery(`SELECT count\(\) > 0 FROM system\.users WHERE name = \?`).
+		WithArgs(sqlmock.AnyArg()).
+		WillReturnRows(sqlmock.NewRows([]string{"count() > 0"}).AddRow(false))
+	mock.ExpectExec(`CREATE USER "v-token-[A-Za-z0-9]+-[0-9]+" IDENTIFIED WITH sha256_password BY 'pw'`).
+		WillReturnResult(sqlmock.NewResult(0, 0))
+
+	_, err := p.NewUser(t.Context(), dbplugin.NewUserRequest{
+		UsernameConfig: dbplugin.UsernameMetadata{DisplayName: "token", RoleName: "testrole"},
+		Statements: dbplugin.Statements{
+			Commands: []string{`CREATE USER "{{username}}" IDENTIFIED WITH sha256_password BY '{{password}}';`},
+		},
+		Password:   "pw",
+		Expiration: time.Now().Add(time.Hour),
+	})
+
 	require.NoError(t, err)
 	require.NoError(t, mock.ExpectationsWereMet())
 }

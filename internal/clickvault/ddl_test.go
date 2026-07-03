@@ -1,6 +1,7 @@
 package clickvault
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -69,6 +70,16 @@ func TestWithCluster(t *testing.T) {
 			cluster: "prod",
 			want:    `GRANT ON CLUSTER 'prod' SELECT ON default.* TO "bob"`,
 		},
+		"CREATE ROLE inserts ON CLUSTER after the name (generic entity path)": {
+			stmt:    `CREATE ROLE "analyst"`,
+			cluster: "prod",
+			want:    `CREATE ROLE "analyst" ON CLUSTER 'prod'`,
+		},
+		"DROP ROLE IF EXISTS inserts ON CLUSTER": {
+			stmt:    `DROP ROLE IF EXISTS "analyst"`,
+			cluster: "prod",
+			want:    `DROP ROLE IF EXISTS "analyst" ON CLUSTER 'prod'`,
+		},
 		"quotes in the cluster name are doubled": {
 			stmt:    `DROP USER IF EXISTS "bob"`,
 			cluster: "pr'od",
@@ -86,6 +97,7 @@ func TestWithCluster(t *testing.T) {
 			got, err := withCluster(tt.stmt, tt.cluster)
 			if tt.expectErr {
 				require.Error(t, err)
+				assert.True(t, errors.Is(err, ErrUnclusterableStatement), "error must wrap ErrUnclusterableStatement")
 				return
 			}
 			require.NoError(t, err)

@@ -32,7 +32,7 @@ type `clickvault` and communicates over the plugin RPC boundary.
 ## DDL construction
 
 All SQL is built in one place, `internal/clickvault/ddl.go`. The rest of the
-plugin never constructs SQL strings itself - it only calls into `ddl.go` and
+plugin never constructs SQL strings itself; it only calls into `ddl.go` and
 executes whatever statements come back.
 
 Key design decisions:
@@ -70,15 +70,17 @@ Set with `vault write database/config/<name> plugin_name=clickvault ...`:
 
 | Field | Required | Description |
 |---|---|---|
-| `connection_url` | yes | ClickHouse address, e.g. `clickhouse://host:9000`. A scheme is required. |
+| `connection_url` | yes | ClickHouse address. Must include a scheme, e.g. `clickhouse://host:9000`. A bare `host:9000` is rejected. See note below. |
 | `username` | yes | The Vault admin user in ClickHouse. Must have `ACCESS MANAGEMENT` grant. |
 | `password` | yes | Password for `username`. |
-| `cluster` | no | If set, all DDL statements get `ON CLUSTER '<cluster>'` inserted at the grammatically correct position. |
+| `cluster` | no | If set, all DDL statements get `ON CLUSTER '<cluster>'` inserted at the grammatically correct position. Leave unset or empty for a single node deployment. |
 | `username_template` | no | Go template for dynamic usernames. See below for default. |
 | `tls` | no | Enable TLS for the ClickHouse connection (default: `false`). |
 | `tls_skip_verify` | no | Skip TLS certificate verification (default: `false`, only used when `tls=true`). |
 | `dial_timeout_seconds` | no | Dial timeout in seconds (default: `5`). |
 | `read_timeout_seconds` | no | Read timeout in seconds (default: `30`). |
+
+> **Note on `connection_url`:** unlike some ClickHouse client libraries (e.g. `clickhouse-go`'s default DSN parsing), clickvault does **not** accept a bare `host:port` address. A scheme prefix is required. This is intentional: inferring a scheme from context (defaulting to `clickhouse://` or `tcp://`) is the kind of ambiguity that makes URL-parsing bugs security-relevant, so `parseAddr` rejects bare addresses rather than guessing. If you are migrating a `connection_url` from another tool, add the scheme explicitly.
 
 Pass `verify_connection=true` (the default) to have `Initialize` ping ClickHouse
 and confirm the admin user has the `ACCESS MANAGEMENT` privilege before
@@ -93,10 +95,23 @@ template is:
 {{ printf "v-%s-%s-%s" (.DisplayName | truncate 8) (random 8) (unix_time) | truncate 255 }}
 ```
 
-This produces names like `v-token-a1b2c3d4-1719945600`. The Vault role name is
-intentionally omitted to avoid leaking internal Vault structure into ClickHouse
-logs. ClickHouse identifiers are limited to 255 characters. You can override
-this with `username_template` in the connection config.
+This produces names like `v-token-a1b2c3d4-1719945600`. ClickHouse identifiers
+are limited to 255 characters. You can override this with `username_template` in
+the connection config.
+
+> **Collision risk:** The default template truncates `DisplayName` to 8
+> characters. In high-volume deployments or when many Vault entities share a
+> naming prefix (e.g. `svc-payments-*`, `svc-payroll-*`), truncated display
+> names can collide. clickvault checks for an existing ClickHouse user with the
+> generated name before running `creation_statements` and fails with a clear
+> error rather than silently overwriting or erroring opaquely. If you see this
+> error frequently, use a longer `username_template`.
+>
+> The Vault role name is intentionally **not** included in the default
+> template — only `DisplayName` — since ClickHouse usernames are visible in
+> `system.users`, query logs, connection logs and `system.query_log`, and
+> `RoleName` often encodes more about the credential's purpose (e.g.
+> `prod-billing-admin`) than you may want exposed there.
 
 ## Password policy
 
@@ -454,5 +469,5 @@ one is templated and executed independently.
 ClickHouse DDL cannot be parameterized, so ClickVault substitutes the
 generated username and password into the statement as literal text. It
 rejects any value containing a single quote, double quote, backtick,
-backslash or control character - a user create/rotate will fail rather than
+backslash or control character; a user create/rotate will fail rather than
 run unsafe SQL.

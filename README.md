@@ -29,11 +29,13 @@ Set with `vault write database/config/<name> plugin_name=clickvault ...`:
 
 | Field | Required | Description |
 |---|---|---|
-| `connection_url` | yes | ClickHouse address, e.g. `clickhouse://host:9000`. A scheme is required - a bare `host:9000` is rejected because `host` would be parsed as the scheme. |
+| `connection_url` | yes | ClickHouse address. Must include a scheme, e.g. `clickhouse://host:9000`. A bare `host:9000` is rejected — `url.Parse` would treat `host` as the scheme, producing subtle bugs. See note below. |
 | `username` | yes | The Vault admin user in ClickHouse. Must have SQL driven access management enabled and the `ACCESS MANAGEMENT` grant, since it needs to create, alter and drop other users. |
 | `password` | yes | Password for `username`. |
 | `cluster` | no | If set, all DDL statements get `ON CLUSTER '<cluster>'` inserted at the grammatically correct position. Leave unset or empty for a single node deployment. |
 | `username_template` | no | Go template used to generate usernames for dynamic users. Defaults to `DefaultUsernameTemplate` (see below). |
+
+> **Note on `connection_url`:** unlike some ClickHouse client libraries (e.g. `clickhouse-go`'s default DSN parsing), clickvault does **not** accept a bare `host:port` address. A scheme prefix is required. This is intentional: inferring a scheme from context (defaulting to `clickhouse://` or `tcp://`) is the kind of ambiguity that makes URL-parsing bugs security-relevant, so `parseAddr` rejects bare addresses rather than guessing. If you are migrating a `connection_url` from another tool, add the scheme explicitly.
 
 Pass `verify_connection=true` (the default for `vault write database/config/...`) to have `Initialize` ping ClickHouse and confirm the admin user has the `ACCESS MANAGEMENT` privilege before accepting the config. This is checked with a UNION ALL query against `system.grants` and `system.role_grants`, so the privilege is recognized whether it is granted directly or through a role:
 
@@ -98,7 +100,11 @@ Dynamic usernames are generated with `sdk/helper/template`. The default template
 {{ printf "v-%s-%s-%s" (.DisplayName | truncate 8) (random 8) (unix_time) | truncate 255 }}
 ```
 
-which produces names like `v-token-a1b2c3d4-1719945600`. The Vault role name is intentionally omitted to avoid leaking internal Vault structure into ClickHouse logs. ClickHouse identifiers are limited to 255 characters; the final `truncate 255` and a hard safety truncation in code both enforce that. You can override this with `username_template` in the connection config, using any fields and functions supported by the Vault SDK template package (`.DisplayName`, `.RoleName`, `random N`, `unix_time`, `truncate N`, `uppercase`, etc).
+which produces names like `v-token-a1b2c3d4-1719945600`. ClickHouse identifiers are limited to 255 characters; the final `truncate 255` and a hard safety truncation in code both enforce that. You can override this with `username_template` in the connection config, using any fields and functions supported by the Vault SDK template package (`.DisplayName`, `.RoleName`, `random N`, `unix_time`, `truncate N`, `uppercase`, etc).
+
+> **Collision risk:** The default template truncates `DisplayName` to 8 characters. In high-volume deployments or when many Vault entities share a naming prefix (e.g. `svc-payments-*`, `svc-payroll-*`), truncated display names can collide. clickvault checks for an existing ClickHouse user with the generated name before running `creation_statements` and fails with a clear error (`generated username %q already exists...`) rather than silently overwriting or erroring opaquely. If you see this error frequently, use a longer `username_template`.
+>
+> Note that `username_template` intentionally does **not** include Vault's `RoleName` — only `DisplayName` — since ClickHouse usernames are visible in `system.users`, query logs, connection logs and `system.query_log`, and `RoleName` often encodes more about the credential's purpose (e.g. `prod-billing-admin`) than you may want exposed there. `DisplayName` typically carries less sensitive context.
 
 ## Password policy
 
