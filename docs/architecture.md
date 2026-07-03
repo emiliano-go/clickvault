@@ -106,9 +106,9 @@ executes whatever statements come back.
 Key design decisions:
 
 - **Cluster handling is centralized.** If the connection is configured with a
-  `cluster`, every generated statement gets `ON CLUSTER '<cluster>'` appended
-  automatically (unless the statement already has one). Callers do not branch
-  on cluster themselves.
+  `cluster`, every generated statement gets `ON CLUSTER '<cluster>'` inserted
+  at the grammatically correct position automatically (unless the statement
+  already has one). Callers do not branch on cluster themselves.
 
 - **ON CLUSTER placement follows ClickHouse grammar.** It goes immediately
   after the entity name for `CREATE`/`ALTER`/`DROP USER`, and immediately

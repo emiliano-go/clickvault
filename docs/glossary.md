@@ -86,7 +86,8 @@ clusters through the Vault database secrets engine.
 
 **Cluster (ClickHouse)** - A multi-node ClickHouse deployment. When a
 connection config includes a `cluster` field, ClickVault automatically
-appends `ON CLUSTER '<name>'` to every generated DDL statement.
+inserts `ON CLUSTER '<name>'` at the grammatically correct position in
+every generated DDL statement.
 
 **Creation statements** - SQL statements in a dynamic role definition that
 create a new database user and grant the appropriate permissions. Required

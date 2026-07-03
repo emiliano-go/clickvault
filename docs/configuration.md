@@ -84,8 +84,12 @@ Set with `vault write database/config/<name> plugin_name=clickvault ...`:
 | `connection_url` | yes | ClickHouse address, e.g. `clickhouse://host:9000`. A scheme is required. |
 | `username` | yes | The Vault admin user in ClickHouse. Must have `ACCESS MANAGEMENT` grant. |
 | `password` | yes | Password for `username`. |
-| `cluster` | no | If set, all DDL statements get `ON CLUSTER '<cluster>'` appended. |
+| `cluster` | no | If set, all DDL statements get `ON CLUSTER '<cluster>'` inserted at the grammatically correct position. |
 | `username_template` | no | Go template for dynamic usernames. See below for default. |
+| `tls` | no | Enable TLS for the ClickHouse connection (default: `false`). |
+| `tls_skip_verify` | no | Skip TLS certificate verification (default: `false`, only used when `tls=true`). |
+| `dial_timeout_seconds` | no | Dial timeout in seconds (default: `5`). |
+| `read_timeout_seconds` | no | Read timeout in seconds (default: `30`). |
 
 Pass `verify_connection=true` (the default) to have `Initialize` ping ClickHouse
 and confirm the admin user has the `ACCESS MANAGEMENT` privilege before
@@ -97,12 +101,13 @@ Dynamic usernames are generated with `sdk/helper/template`. The default
 template is:
 
 ```text
-{{ printf "v-%s-%s-%s-%s" (.DisplayName | truncate 64) (.RoleName | truncate 64) (random 8) (unix_time) | truncate 255 }}
+{{ printf "v-%s-%s-%s" (.DisplayName | truncate 8) (random 8) (unix_time) | truncate 255 }}
 ```
 
-This produces names like `v-token-myrole-a1b2c3d4-1719945600`. ClickHouse
-identifiers are limited to 255 characters. You can override this with
-`username_template` in the connection config.
+This produces names like `v-token-a1b2c3d4-1719945600`. The Vault role name is
+intentionally omitted to avoid leaking internal Vault structure into ClickHouse
+logs. ClickHouse identifiers are limited to 255 characters. You can override
+this with `username_template` in the connection config.
 
 ## Password policy
 

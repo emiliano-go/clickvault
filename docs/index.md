@@ -100,7 +100,8 @@ and calls six methods:
 All SQL is built in one place, `internal/clickvault/ddl.go`. The rest of the
 plugin never constructs SQL strings itself. That file also handles single-node
 vs. clustered ClickHouse: if a `cluster` is configured, every generated
-statement gets `ON CLUSTER '<cluster>'` appended automatically.
+statement gets `ON CLUSTER '<cluster>'` inserted at the grammatically correct
+position automatically.
 
 ## Key features
 

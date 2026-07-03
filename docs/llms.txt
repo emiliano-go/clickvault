@@ -11,24 +11,24 @@
 
 ## Getting Started
 
-- [Quick Start](/quick-start/) — register the plugin, configure a connection, and create your first role
+- [Quick Start](/quick-start/) - register the plugin, configure a connection, and create your first role
 
 ## Configuration
 
-- [Configuration](/configuration/) — connection URL, admin credentials, cluster support, username templates
+- [Configuration](/configuration/) - connection URL, admin credentials, cluster support, username templates
 
 ## Roles
 
-- [Roles](/roles/) — dynamic roles (ephemeral credentials) and static roles (managed rotation)
+- [Roles](/roles/) - dynamic roles (ephemeral credentials) and static roles (managed rotation)
 
 ## Architecture
 
-- [Architecture](/architecture/) — how ClickVault implements the Vault database plugin SDK
+- [Architecture](/architecture/) - how ClickVault implements the Vault database plugin SDK
 
 ## Development
 
-- [Development](/development/) — building, testing, and contributing
+- [Development](/development/) - building, testing, and contributing
 
 ## Reference
 
-- [Glossary](/glossary/) — key terms and definitions
+- [Glossary](/glossary/) - key terms and definitions

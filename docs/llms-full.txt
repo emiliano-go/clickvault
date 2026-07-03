@@ -32,15 +32,15 @@ type `clickvault` and communicates over the plugin RPC boundary.
 ## DDL construction
 
 All SQL is built in one place, `internal/clickvault/ddl.go`. The rest of the
-plugin never constructs SQL strings itself — it only calls into `ddl.go` and
+plugin never constructs SQL strings itself - it only calls into `ddl.go` and
 executes whatever statements come back.
 
 Key design decisions:
 
 - **Cluster handling is centralized.** If the connection is configured with a
-  `cluster`, every generated statement gets `ON CLUSTER '<cluster>'` appended
-  automatically (unless the statement already has one). Callers do not branch
-  on cluster themselves.
+  `cluster`, every generated statement gets `ON CLUSTER '<cluster>'` inserted
+  at the grammatically correct position automatically (unless the statement
+  already has one). Callers do not branch on cluster themselves.
 
 - **ON CLUSTER placement follows ClickHouse grammar.** It goes immediately
   after the entity name for `CREATE`/`ALTER`/`DROP USER`, and immediately
@@ -73,8 +73,12 @@ Set with `vault write database/config/<name> plugin_name=clickvault ...`:
 | `connection_url` | yes | ClickHouse address, e.g. `clickhouse://host:9000`. A scheme is required. |
 | `username` | yes | The Vault admin user in ClickHouse. Must have `ACCESS MANAGEMENT` grant. |
 | `password` | yes | Password for `username`. |
-| `cluster` | no | If set, all DDL statements get `ON CLUSTER '<cluster>'` appended. |
+| `cluster` | no | If set, all DDL statements get `ON CLUSTER '<cluster>'` inserted at the grammatically correct position. |
 | `username_template` | no | Go template for dynamic usernames. See below for default. |
+| `tls` | no | Enable TLS for the ClickHouse connection (default: `false`). |
+| `tls_skip_verify` | no | Skip TLS certificate verification (default: `false`, only used when `tls=true`). |
+| `dial_timeout_seconds` | no | Dial timeout in seconds (default: `5`). |
+| `read_timeout_seconds` | no | Read timeout in seconds (default: `30`). |
 
 Pass `verify_connection=true` (the default) to have `Initialize` ping ClickHouse
 and confirm the admin user has the `ACCESS MANAGEMENT` privilege before
@@ -86,12 +90,13 @@ Dynamic usernames are generated with `sdk/helper/template`. The default
 template is:
 
 ```text
-{{ printf "v-%s-%s-%s-%s" (.DisplayName | truncate 64) (.RoleName | truncate 64) (random 8) (unix_time) | truncate 255 }}
+{{ printf "v-%s-%s-%s" (.DisplayName | truncate 8) (random 8) (unix_time) | truncate 255 }}
 ```
 
-This produces names like `v-token-myrole-a1b2c3d4-1719945600`. ClickHouse
-identifiers are limited to 255 characters. You can override this with
-`username_template` in the connection config.
+This produces names like `v-token-a1b2c3d4-1719945600`. The Vault role name is
+intentionally omitted to avoid leaking internal Vault structure into ClickHouse
+logs. ClickHouse identifiers are limited to 255 characters. You can override
+this with `username_template` in the connection config.
 
 ## Password policy
 
@@ -147,10 +152,10 @@ Integration tests spin up a real ClickHouse container (matching
 `testdata/docker-compose.yml`) with the Vault SDK's Docker test helper,
 and drive the full lifecycle:
 
-1. `Initialize` — configure the connection
-2. `NewUser` — create a dynamic user
+1. `Initialize` - configure the connection
+2. `NewUser` - create a dynamic user
 3. Verify the user can connect to ClickHouse
-4. `DeleteUser` — revoke the user
+4. `DeleteUser` - revoke the user
 5. Verify the user can no longer connect
 6. Repeat `DeleteUser` to confirm idempotency
 7. `UpdateUser` on a static-style user with before/after connection checks
@@ -184,50 +189,51 @@ clickvault/
 
 # Glossary
 
-**ClickHouse** — An open-source, column-oriented DBMS for online analytical
+**ClickHouse** - An open-source, column-oriented DBMS for online analytical
 processing (OLAP). ClickVault manages users and credentials for ClickHouse
 clusters through the Vault database secrets engine.
 
-**Cluster (ClickHouse)** — A multi-node ClickHouse deployment. When a
+**Cluster (ClickHouse)** - A multi-node ClickHouse deployment. When a
 connection config includes a `cluster` field, ClickVault automatically
-appends `ON CLUSTER '<name>'` to every generated DDL statement.
+inserts `ON CLUSTER '<name>'` at the grammatically correct position in
+every generated DDL statement.
 
-**Creation statements** — SQL statements in a dynamic role definition that
+**Creation statements** - SQL statements in a dynamic role definition that
 create a new database user and grant the appropriate permissions. Required
 for every dynamic role; there is no built-in default.
 
-**Database secrets engine** — A Vault secrets engine that generates
+**Database secrets engine** - A Vault secrets engine that generates
 dynamic database credentials on demand and manages the lifecycle of those
 credentials (creation, rotation, revocation).
 
-**DDL** — Data Definition Language. SQL statements like `CREATE USER`,
+**DDL** - Data Definition Language. SQL statements like `CREATE USER`,
 `ALTER USER`, `DROP USER`, `GRANT`, and `REVOKE`.
 
-**Dynamic role** — A Vault database role that creates ephemeral ClickHouse
+**Dynamic role** - A Vault database role that creates ephemeral ClickHouse
 users on demand. Each lease produces a unique user with a configurable TTL;
 the user is automatically dropped when the lease expires or is revoked.
 
-**Plugin RPC** — The protocol buffer-based remote procedure call interface
+**Plugin RPC** - The protocol buffer-based remote procedure call interface
 that Vault uses to communicate with database plugins. ClickVault implements
 the `sdk/database/dbplugin/v5` interface.
 
-**Revocation statements** — SQL statements that clean up a dynamic user.
+**Revocation statements** - SQL statements that clean up a dynamic user.
 Defaults to `DROP USER IF EXISTS "{{username}}"` when not set in the role
 definition.
 
-**Rotation statements** — SQL statements for static roles that change the
+**Rotation statements** - SQL statements for static roles that change the
 user's password. Defaults to `ALTER USER "{{username}}" IDENTIFIED WITH
 sha256_password BY '{{password}}'`.
 
-**Static role** — A Vault database role that manages an existing long-lived
+**Static role** - A Vault database role that manages an existing long-lived
 ClickHouse user. Vault rotates the user's password on a configurable
 schedule (the `rotation_period`).
 
-**Username template** — A Go template string used to generate usernames for
+**Username template** - A Go template string used to generate usernames for
 dynamic users. Supports `.DisplayName`, `.RoleName`, `random N`, `unix_time`,
 `truncate N`, and `uppercase` functions.
 
-**Vault** — HashiCorp Vault, a tool for secrets management, encryption, and
+**Vault** - HashiCorp Vault, a tool for secrets management, encryption, and
 access control. ClickVault integrates with Vault's database secrets engine
 to manage ClickHouse credentials.
 
@@ -261,15 +267,16 @@ and calls six methods:
 All SQL is built in one place, `internal/clickvault/ddl.go`. The rest of the
 plugin never constructs SQL strings itself. That file also handles single-node
 vs. clustered ClickHouse: if a `cluster` is configured, every generated
-statement gets `ON CLUSTER '<cluster>'` appended automatically.
+statement gets `ON CLUSTER '<cluster>'` inserted at the grammatically correct
+position automatically.
 
 ## Key features
 
-- **Dynamic credentials** — ephemeral ClickHouse users created on demand, automatically cleaned up
-- **Static role rotation** — scheduled password rotation for existing long-lived users
-- **Cluster-aware DDL** — automatic `ON CLUSTER` insertion for multi-node ClickHouse
-- **SQL injection prevention** — rejects values containing quotes, backticks, or control characters
-- **Concurrency-safe** — single `sync.RWMutex` protects the connection and config
+- **Dynamic credentials** - ephemeral ClickHouse users created on demand, automatically cleaned up
+- **Static role rotation** - scheduled password rotation for existing long-lived users
+- **Cluster-aware DDL** - automatic `ON CLUSTER` insertion for multi-node ClickHouse
+- **SQL injection prevention** - rejects values containing quotes, backticks, or control characters
+- **Concurrency-safe** - single `sync.RWMutex` protects the connection and config
 
 ## Repository
 
@@ -447,5 +454,5 @@ one is templated and executed independently.
 ClickHouse DDL cannot be parameterized, so ClickVault substitutes the
 generated username and password into the statement as literal text. It
 rejects any value containing a single quote, double quote, backtick,
-backslash or control character — a user create/rotate will fail rather than
+backslash or control character - a user create/rotate will fail rather than
 run unsafe SQL.

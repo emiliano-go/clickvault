@@ -21,7 +21,7 @@ Vault's database secrets engine talks to clickvault over the plugin RPC boundary
 | `Type` | Internal to Vault | Returns `"clickvault"` |
 | `Close` | Plugin shutdown / reload | Closes the ClickHouse connection |
 
-All SQL is built in one place, `internal/clickvault/ddl.go`. The rest of the plugin (`internal/clickvault/clickvault.go`) never constructs SQL strings itself, it only calls into `ddl.go` and executes whatever statements come back. That file is also where single node vs. clustered ClickHouse is handled: if the connection is configured with a `cluster`, every generated statement gets `ON CLUSTER '<cluster>'` appended automatically (unless the statement already has one). Callers do not branch on cluster themselves.
+All SQL is built in one place, `internal/clickvault/ddl.go`. The rest of the plugin (`internal/clickvault/clickvault.go`) never constructs SQL strings itself, it only calls into `ddl.go` and executes whatever statements come back. That file is also where single node vs. clustered ClickHouse is handled: if the connection is configured with a `cluster`, every generated statement gets `ON CLUSTER '<cluster>'` inserted at the position ClickHouse's grammar requires (unless the statement already has an explicit one). Callers do not branch on cluster themselves.
 
 ## Connection configuration
 
@@ -29,16 +29,19 @@ Set with `vault write database/config/<name> plugin_name=clickvault ...`:
 
 | Field | Required | Description |
 |---|---|---|
-| `connection_url` | yes | ClickHouse address, e.g. `clickhouse://host:9000`. A scheme is required — a bare `host:9000` is rejected, because `host` would be parsed as the scheme. |
+| `connection_url` | yes | ClickHouse address, e.g. `clickhouse://host:9000`. A scheme is required - a bare `host:9000` is rejected because `host` would be parsed as the scheme. |
 | `username` | yes | The Vault admin user in ClickHouse. Must have SQL driven access management enabled and the `ACCESS MANAGEMENT` grant, since it needs to create, alter and drop other users. |
 | `password` | yes | Password for `username`. |
-| `cluster` | no | If set, all DDL statements get `ON CLUSTER '<cluster>'` appended. Leave unset or empty for a single node deployment. |
+| `cluster` | no | If set, all DDL statements get `ON CLUSTER '<cluster>'` inserted at the grammatically correct position. Leave unset or empty for a single node deployment. |
 | `username_template` | no | Go template used to generate usernames for dynamic users. Defaults to `DefaultUsernameTemplate` (see below). |
 
-Pass `verify_connection=true` (the default for `vault write database/config/...`) to have `Initialize` ping ClickHouse and confirm the admin user has the `ACCESS MANAGEMENT` privilege before accepting the config. This is checked with:
+Pass `verify_connection=true` (the default for `vault write database/config/...`) to have `Initialize` ping ClickHouse and confirm the admin user has the `ACCESS MANAGEMENT` privilege before accepting the config. This is checked with a UNION ALL query against `system.grants` and `system.role_grants`, so the privilege is recognized whether it is granted directly or through a role:
 
 ```sql
 SELECT access_type FROM system.grants WHERE user_name = ?
+UNION ALL
+SELECT g.access_type FROM system.grants g
+WHERE g.role_name IN (SELECT granted_role_name FROM system.role_grants WHERE user_name = ?)
 ```
 
 looking for a row of `ACCESS MANAGEMENT` or `ALL`. Your ClickHouse admin user needs SQL driven user management enabled (either `<access_management>1</access_management>` in `users.xml`, or a plain `GRANT ACCESS MANAGEMENT ON *.* TO <admin>` once SQL driven access control is on) before this will succeed.
@@ -92,10 +95,10 @@ Because ClickHouse's `DROP USER IF EXISTS` does not error on a missing user, and
 Dynamic usernames are generated with `sdk/helper/template`. The default template is:
 
 ```
-{{ printf "v-%s-%s-%s-%s" (.DisplayName | truncate 64) (.RoleName | truncate 64) (random 8) (unix_time) | truncate 255 }}
+{{ printf "v-%s-%s-%s" (.DisplayName | truncate 8) (random 8) (unix_time) | truncate 255 }}
 ```
 
-which produces names like `v-token-myrole-a1b2c3d4-1719945600`. ClickHouse identifiers are limited to 255 characters; the final `truncate 255` and a hard safety truncation in code both enforce that. You can override this with `username_template` in the connection config, using any fields and functions supported by the Vault SDK template package (`.DisplayName`, `.RoleName`, `random N`, `unix_time`, `truncate N`, `uppercase`, etc).
+which produces names like `v-token-a1b2c3d4-1719945600`. The Vault role name is intentionally omitted to avoid leaking internal Vault structure into ClickHouse logs. ClickHouse identifiers are limited to 255 characters; the final `truncate 255` and a hard safety truncation in code both enforce that. You can override this with `username_template` in the connection config, using any fields and functions supported by the Vault SDK template package (`.DisplayName`, `.RoleName`, `random N`, `unix_time`, `truncate N`, `uppercase`, etc).
 
 ## Password policy
 
@@ -118,7 +121,7 @@ rule "charset" {
 
 `scripts/setup_vault.sh` creates this policy as `clickhouse-password-policy` and wires it into the example roles.
 
-> **Security note.** ClickHouse DDL cannot be parameterized, so clickvault substitutes the generated username and password into the statement as literal text. It rejects any value containing a single quote, double quote, backtick, backslash or control character (which could otherwise break out of the surrounding SQL quoting and inject arbitrary DDL) — a user create/rotate will fail rather than run unsafe SQL. All other printable characters, including ordinary symbols, are allowed, so an alphanumeric-plus-symbols policy like the one above is both strong and safe.
+> **Security note.** ClickHouse DDL cannot be parameterized, so clickvault substitutes the generated username and password into the statement as literal text. It rejects any value containing a single quote, double quote, backtick, backslash or control character (which could otherwise break out of the surrounding SQL quoting and inject arbitrary DDL). A user create/rotate will fail rather than run unsafe SQL. All other printable characters, including ordinary symbols, are allowed, so an alphanumeric-plus-symbols policy like the one above is both strong and safe.
 
 ## Repository layout
 
@@ -248,7 +251,7 @@ vault write database/config/pos-clickhouse \
   cluster="prod"
 ```
 
-Role `creation_statements`, `rotation_statements` and `revocation_statements` stay written as the single node form; clickvault appends `ON CLUSTER 'prod'` to each generated statement automatically.
+Role `creation_statements`, `rotation_statements` and `revocation_statements` stay written as the single node form; clickvault inserts `ON CLUSTER 'prod'` at the grammatically correct position in each generated statement automatically.
 
 ## Concurrency and error handling
 
