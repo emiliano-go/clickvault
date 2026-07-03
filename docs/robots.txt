@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://clickvault.emiliano-go.com/sitemap.xml
+
+# Content signals for LLM and AI training
+search/ai-input/ai-train: yes

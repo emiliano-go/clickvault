@@ -1,0 +1,34 @@
+# ClickVault Documentation
+
+> ClickVault is a HashiCorp Vault database secrets engine plugin for ClickHouse.
+> It lets Vault create short-lived, ephemeral ClickHouse users on demand
+> (dynamic secrets) and rotate passwords of long-lived ClickHouse users on a
+> schedule (static roles).
+
+## Overview
+
+- [ClickVault Documentation](/)
+
+## Getting Started
+
+- [Quick Start](/quick-start/) — register the plugin, configure a connection, and create your first role
+
+## Configuration
+
+- [Configuration](/configuration/) — connection URL, admin credentials, cluster support, username templates
+
+## Roles
+
+- [Roles](/roles/) — dynamic roles (ephemeral credentials) and static roles (managed rotation)
+
+## Architecture
+
+- [Architecture](/architecture/) — how ClickVault implements the Vault database plugin SDK
+
+## Development
+
+- [Development](/development/) — building, testing, and contributing
+
+## Reference
+
+- [Glossary](/glossary/) — key terms and definitions

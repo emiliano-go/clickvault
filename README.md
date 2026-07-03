@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="clickvault-banner.png" alt="ClickVault">
+</p>
+
 # clickvault
 
 clickvault is a HashiCorp Vault database secrets engine plugin for ClickHouse. It lets Vault create short lived, ephemeral ClickHouse users on demand (dynamic secrets) and rotate the password of long lived ClickHouse users on a schedule (static roles), so applications and operators never handle a standing ClickHouse credential directly.

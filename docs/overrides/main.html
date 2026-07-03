@@ -1,0 +1,7 @@
+{% block site_meta %}
+{% if page and page.meta and page.meta.seo_html %}
+{{ page.meta.seo_html | safe }}
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
