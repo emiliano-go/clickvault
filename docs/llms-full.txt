@@ -255,7 +255,7 @@ to manage ClickHouse credentials.
 # index.md
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png" alt="ClickVault" width="80%"/>
+  <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner.png" alt="ClickVault" width="80%"/>
 </p>
 <p align="center">
   <strong style="font-size: 2.5em;">ClickVault</strong>

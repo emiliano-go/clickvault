@@ -6,7 +6,7 @@ seo:
   og:
     type: website
     title: ClickVault - ClickVault Documentation
-    description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png"
+    description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner.png"
       alt="ClickVault" width="80%"/ </p <p...
     url: https://clickvault.emiliano-go.com/
     image: https://clickvault.emiliano-go.com/assets/images/og-image.png
@@ -18,19 +18,19 @@ seo:
   twitter:
     card: summary_large_image
     title: ClickVault - ClickVault Documentation
-    description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png"
+    description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner.png"
       alt="ClickVault" width="80%"/ </p <p...
     image: https://clickvault.emiliano-go.com/assets/images/og-image.png
     image:alt: ClickVault documentation
     site: '@emiliano_go_'
-  description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png"
+  description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner.png"
     alt="ClickVault" width="80%"/ </p <p...
   schema_jsonld:
     '@context': https://schema.org
     '@type': WebPage
     name: ClickVault - ClickVault Documentation
     url: https://clickvault.emiliano-go.com/
-    description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png"
+    description: <p align="center" <img src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner.png"
       alt="ClickVault" width="80%"/ </p <p...
     image: https://clickvault.emiliano-go.com/assets/images/og-image.png
     publisher:
@@ -38,12 +38,12 @@ seo:
       name: Emiliano Gandini Outeda
       logo: https://clickvault.emiliano-go.com/assets/images/og-image.png
 seo_html: "<title>ClickVault - ClickVault Documentation</title>\n<meta name=\"description\"\
-  \ content=\"&lt;p align=&quot;center&quot; &lt;img src=&quot;https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png&quot;\
+  \ content=\"&lt;p align=&quot;center&quot; &lt;img src=&quot;https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner.png&quot;\
   \ alt=&quot;ClickVault&quot; width=&quot;80%&quot;/ &lt;/p &lt;p...\">\n<link rel=\"\
   canonical\" href=\"https://clickvault.emiliano-go.com/\">\n<meta name=\"robots\"\
   \ content=\"index,follow\">\n<meta property=\"og:type\" content=\"website\">\n<meta\
   \ property=\"og:title\" content=\"ClickVault - ClickVault Documentation\">\n<meta\
-  \ property=\"og:description\" content=\"&lt;p align=&quot;center&quot; &lt;img src=&quot;https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png&quot;\
+  \ property=\"og:description\" content=\"&lt;p align=&quot;center&quot; &lt;img src=&quot;https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner.png&quot;\
   \ alt=&quot;ClickVault&quot; width=&quot;80%&quot;/ &lt;/p &lt;p...\">\n<meta property=\"\
   og:url\" content=\"https://clickvault.emiliano-go.com/\">\n<meta property=\"og:image\"\
   \ content=\"https://clickvault.emiliano-go.com/assets/images/og-image.png\">\n<meta\
@@ -53,14 +53,14 @@ seo_html: "<title>ClickVault - ClickVault Documentation</title>\n<meta name=\"de
   \ property=\"og:locale\" content=\"en_US\">\n<meta name=\"twitter:card\" content=\"\
   summary_large_image\">\n<meta name=\"twitter:title\" content=\"ClickVault - ClickVault\
   \ Documentation\">\n<meta name=\"twitter:description\" content=\"&lt;p align=&quot;center&quot;\
-  \ &lt;img src=&quot;https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png&quot;\
+  \ &lt;img src=&quot;https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner.png&quot;\
   \ alt=&quot;ClickVault&quot; width=&quot;80%&quot;/ &lt;/p &lt;p...\">\n<meta name=\"\
   twitter:image\" content=\"https://clickvault.emiliano-go.com/assets/images/og-image.png\"\
   >\n<meta name=\"twitter:image:alt\" content=\"ClickVault documentation\">\n<meta\
   \ name=\"twitter:site\" content=\"@emiliano_go_\">\n<script type=\"application/ld+json\"\
   >\n{\n  \"@context\": \"https://schema.org\",\n  \"@type\": \"WebPage\",\n  \"name\"\
   : \"ClickVault - ClickVault Documentation\",\n  \"url\": \"https://clickvault.emiliano-go.com/\"\
-  ,\n  \"description\": \"<p align=\\\"center\\\" <img src=\\\"https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png\\\
+  ,\n  \"description\": \"<p align=\\\"center\\\" <img src=\\\"https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner.png\\\
   \" alt=\\\"ClickVault\\\" width=\\\"80%\\\"/ </p <p...\",\n  \"image\": \"https://clickvault.emiliano-go.com/assets/images/og-image.png\"\
   ,\n  \"publisher\": {\n    \"@type\": \"Organization\",\n    \"name\": \"Emiliano\
   \ Gandini Outeda\",\n    \"logo\": \"https://clickvault.emiliano-go.com/assets/images/og-image.png\"\
@@ -68,8 +68,8 @@ seo_html: "<title>ClickVault - ClickVault Documentation</title>\n<meta name=\"de
 ---
 
 <div style="text-align: center">
-  <img class="banner-light" src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner.png" alt="ClickVault" width="80%"/>
-  <img class="banner-dark" src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/clickvault-banner-dark.png" alt="ClickVault" width="80%"/>
+  <img class="banner-light" src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner.png" alt="ClickVault" width="80%"/>
+  <img class="banner-dark" src="https://raw.githubusercontent.com/emiliano-go/clickvault/master/assets/images/clickvault-banner-dark.png" alt="ClickVault" width="80%"/>
 </div>
 <p align="center">
   <strong style="font-size: 2.5em;">ClickVault</strong>

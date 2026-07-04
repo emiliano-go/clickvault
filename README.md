@@ -1,11 +1,11 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="clickvault-banner-dark.png">
-  <img src="clickvault-banner.png" alt="ClickVault">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/images/clickvault-banner-dark.png">
+  <img src="assets/images/clickvault-banner.png" alt="ClickVault">
 </picture>
 
 # clickvault
 
-[![CI](https://img.shields.io/github/actions/workflow/status/emiliano-go/clickvault/ci.yml?branch=main&style=for-the-badge&logo=github&label=CI)](https://github.com/emiliano-go/clickvault/actions/workflows/ci.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/emiliano-go/clickvault/ci.yml?branch=master&style=for-the-badge&logo=github&label=CI)](https://github.com/emiliano-go/clickvault/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/emiliano-go/clickvault?style=for-the-badge&logo=codecov&label=Coverage)](https://codecov.io/gh/emiliano-go/clickvault)
 
 clickvault is a HashiCorp Vault database secrets engine plugin for ClickHouse. It lets Vault create short lived, ephemeral ClickHouse users on demand (dynamic secrets) and rotate the password of long lived ClickHouse users on a schedule (static roles), so applications and operators never handle a standing ClickHouse credential directly.
@@ -137,18 +137,19 @@ rule "charset" {
 
 ```
 clickvault/
-├── go.mod, go.sum          module github.com/emiliano-go/clickvault
-├── main.go                 plugin entrypoint, calls dbplugin.ServeMultiplex
+├── assets/images/           banner images for README and docs site
+├── codecov.yml              coverage thresholds and PR comment config
+├── go.mod, go.sum           module github.com/emiliano-go/clickvault
 ├── internal/clickvault/
-│   ├── clickvault.go        ClickvaultPlugin and the six dbplugin.Database methods
-│   ├── clickvault_test.go   unit tests, ClickHouse calls mocked with go-sqlmock
+│   ├── clickvault.go         ClickvaultPlugin and the six dbplugin.Database methods
+│   ├── clickvault_test.go    unit tests, ClickHouse calls mocked with go-sqlmock
 │   ├── ddl.go                all SQL construction and cluster branching
 │   └── ddl_test.go           table driven tests for ddl.go
-├── testdata/docker-compose.yml   single node ClickHouse for local/manual testing
-├── tests/integration_test.go     integration tests against a real ClickHouse container
-├── scripts/setup_vault.sh        registers and configures the plugin against a dev Vault
-├── codecov.yml               coverage thresholds and PR comment config
-└── .github/workflows/ci.yml      go vet, go test (with race + coverage), build, sha256 artifact
+├── main.go                  plugin entrypoint, calls dbplugin.ServeMultiplex
+├── scripts/setup_vault.sh   registers and configures the plugin against a dev Vault
+├── testdata/docker-compose.yml    single node ClickHouse for local/manual testing
+├── tests/integration_test.go      integration tests against a real ClickHouse container
+└── .github/workflows/ci.yml       go vet, go test (with race + coverage), build, sha256 artifact
 ```
 
 ## Building
