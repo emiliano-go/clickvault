@@ -6,7 +6,7 @@
 # clickvault
 
 [![CI](https://img.shields.io/github/actions/workflow/status/emiliano-go/clickvault/ci.yml?branch=main&style=for-the-badge&logo=github&label=CI)](https://github.com/emiliano-go/clickvault/actions/workflows/ci.yml)
-[![Coverage](https://codecov.io/gh/emiliano-go/clickvault/branch/main/graph/badge.svg)](https://codecov.io/gh/emiliano-go/clickvault)
+[![Coverage](https://img.shields.io/codecov/c/github/emiliano-go/clickvault?style=for-the-badge&logo=codecov&label=Coverage)](https://codecov.io/gh/emiliano-go/clickvault)
 
 clickvault is a HashiCorp Vault database secrets engine plugin for ClickHouse. It lets Vault create short lived, ephemeral ClickHouse users on demand (dynamic secrets) and rotate the password of long lived ClickHouse users on a schedule (static roles), so applications and operators never handle a standing ClickHouse credential directly.
 
