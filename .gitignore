@@ -1,3 +1,5 @@
 /bin/
 *.sha256
 /site/
+*.out
+coverage.txt

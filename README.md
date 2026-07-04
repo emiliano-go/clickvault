@@ -5,6 +5,9 @@
 
 # clickvault
 
+[![CI](https://img.shields.io/github/actions/workflow/status/emiliano-go/clickvault/ci.yml?branch=main&style=for-the-badge&logo=github&label=CI)](https://github.com/emiliano-go/clickvault/actions/workflows/ci.yml)
+[![Coverage](https://codecov.io/gh/emiliano-go/clickvault/branch/main/graph/badge.svg)](https://codecov.io/gh/emiliano-go/clickvault)
+
 clickvault is a HashiCorp Vault database secrets engine plugin for ClickHouse. It lets Vault create short lived, ephemeral ClickHouse users on demand (dynamic secrets) and rotate the password of long lived ClickHouse users on a schedule (static roles), so applications and operators never handle a standing ClickHouse credential directly.
 
 It implements the Vault database plugin SDK interface (`sdk/database/dbplugin/v5`) and registers itself with Vault as plugin type `clickvault`.
@@ -144,7 +147,8 @@ clickvault/
 ├── testdata/docker-compose.yml   single node ClickHouse for local/manual testing
 ├── tests/integration_test.go     integration tests against a real ClickHouse container
 ├── scripts/setup_vault.sh        registers and configures the plugin against a dev Vault
-└── .github/workflows/ci.yml      go vet, go test, build, sha256 artifact
+├── codecov.yml               coverage thresholds and PR comment config
+└── .github/workflows/ci.yml      go vet, go test (with race + coverage), build, sha256 artifact
 ```
 
 ## Building
