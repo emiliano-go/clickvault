@@ -183,7 +183,7 @@ Docker must be running locally for that command to work.
 
 Unit tests cover 85.4% of `internal/clickvault` (`clickvault.go`, `ddl.go`). The root package (`main.go`, the plugin entrypoint) is excluded from meaningful coverage since it only calls `dbplugin.ServeMultiplex`, bringing the project-wide Codecov total to ~78%.
 
-Coverage reports are generated automatically by CI (`go test -coverprofile=coverage.txt`) and uploaded to [Codecov](https://codecov.io/gh/emiliano-go/clickvault). The `codecov.yml` config enforces a project-level target of 70% with a 5% tolerance on PRs.
+Expected test coverage: 99%. Coverage reports are generated automatically by CI (`go test -coverprofile=coverage.txt`) and uploaded to [Codecov](https://codecov.io/gh/emiliano-go/clickvault). The `codecov.yml` config enforces a project-level target of 70% with a 5% tolerance on PRs.
 
 ## Registering with Vault
 
