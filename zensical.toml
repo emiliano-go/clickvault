@@ -7,8 +7,6 @@ site_dir = "site"
 
 copyright = "&copy; 2026 Emiliano Gandini Outeda"
 
-extra_css = ["stylesheets/extra.css"]
-
 [project.theme]
 variant = "modern"
 custom_dir = "docs/overrides"
@@ -16,6 +14,8 @@ favicon = "assets/images/og-image.png"
 
 font.text = "Ubuntu"
 font.code = "JetBrains Mono"
+
+extra_css = ["stylesheets/extra.css"]
 
 features = [
     "navigation.instant",

@@ -12,8 +12,31 @@
     white-space: nowrap;
 }
 
-/* Theme-aware banner: light mode shows .banner-light, dark mode shows .banner-dark.
-   Material sets data-md-color-scheme on <body> when the user toggles the palette.
-   !important ensures these win over any Material base styles on images. */
+/* Theme-aware banner: light mode shows .banner-light, dark mode shows .banner-dark. */
 [data-md-color-scheme="default"] img.banner-dark { display: none !important; }
 [data-md-color-scheme="slate"]   img.banner-light { display: none !important; }
+
+/*
+ * Mobile sidebar drawer.
+ */
+@media screen and (max-width: 76.234375em) {
+    .md-sidebar--primary {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        height: 100dvh !important;
+        max-width: 20rem;
+        width: 80vw !important;
+        z-index: 99 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border-radius: 0 !important;
+        border-right: 1px solid var(--md-default-fg-color--lightest);
+        transform: translateX(-100%) !important;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    body:has([data-md-toggle="drawer"]:checked) .md-sidebar--primary {
+        transform: translateX(0) !important;
+    }
+}
