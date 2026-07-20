@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% block extrahead %}
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% endblock %}
+
 {% block site_meta %}
 {% if page and page.meta and page.meta.seo_html %}
 {{ page.meta.seo_html | safe }}
@@ -14,10 +18,14 @@
 (function() {
   var drawer = document.getElementById('__drawer');
   if (drawer) {
+    drawer.addEventListener('change', function() {
+      document.body.classList.toggle('drawer-open', this.checked);
+    });
     document.addEventListener('click', function(e) {
       var link = e.target.closest('.md-sidebar--primary .md-nav__link');
       if (link && drawer.checked) {
         drawer.checked = false;
+        document.body.classList.remove('drawer-open');
       }
     });
   }
